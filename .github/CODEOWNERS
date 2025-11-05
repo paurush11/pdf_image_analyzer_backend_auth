@@ -1,0 +1,16 @@
+# Default owner for all files
+# Replace @your-username with your GitHub username
+# All PRs will require approval from code owners if this is enabled in branch protection
+
+# Example: Require approval from specific user for all files
+# * @your-username
+
+# Example: Require approval for specific paths
+# /src/ @your-username
+# /docs/ @your-username
+
+# For now, leave empty to allow any team member to approve
+# You can add your GitHub username here if you want to be the default reviewer
+* @paurush11
+
+

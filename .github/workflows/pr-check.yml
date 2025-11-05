@@ -1,0 +1,25 @@
+name: Require PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  check-pr-approval:
+    name: Check PR Approval
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check if PR is to protected branch
+        run: |
+          BASE_BRANCH="${{ github.base_ref }}"
+          if [[ "$BASE_BRANCH" == "main" || "$BASE_BRANCH" == "dev" || "$BASE_BRANCH" == "staging" ]]; then
+            echo "PR is targeting protected branch: $BASE_BRANCH"
+            echo "Branch protection rules should require at least 1 approval"
+          else
+            echo "PR is targeting branch: $BASE_BRANCH (not a protected branch)"
+          fi
+

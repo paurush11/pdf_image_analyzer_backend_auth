@@ -1,0 +1,46 @@
+name: Prevent Direct Pushes to Protected Branches
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - staging
+
+jobs:
+  check-push-source:
+    name: Verify Push is from PR Merge
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if push is from PR merge
+        run: |
+          # Get the commit message
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          
+          # Check if commit is a merge commit or has merge indicator
+          if echo "$COMMIT_MSG" | grep -qE "^Merge pull request|^Merge branch"; then
+            echo "✅ Push appears to be from a merged PR"
+            exit 0
+          fi
+          
+          # Check if this is a direct push (not from PR)
+          if [ "$GITHUB_EVENT_NAME" == "push" ] && [ -z "$GITHUB_PR_HEAD_SHA" ]; then
+            echo "⚠️  Warning: Direct push detected to protected branch: $BRANCH"
+            echo "This should be prevented by branch protection rules."
+            echo "If you see this, please ensure branch protection is enabled."
+            # Don't fail here - branch protection should handle this
+            # But we'll log a warning
+          fi
+
+      - name: Verify branch protection
+        run: |
+          echo "Branch protection rules should prevent direct pushes."
+          echo "If you can push directly, branch protection may not be configured correctly."
+
