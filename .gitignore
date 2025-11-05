@@ -201,7 +201,27 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
-# Marimo
-marimo/_static/
-marimo/_lsp/
-__marimo__/
+# Node.js
+node_modules/
+dist/
+*.log
+.env
+.env.local
+.DS_Store
+
+# Build outputs
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+coverage/
+.nyc_output/
+
+# Husky
+.husky/_
