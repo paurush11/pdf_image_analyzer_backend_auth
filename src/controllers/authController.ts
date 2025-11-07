@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { authService } from '../services/authService';
 import { formatExpirationTime, isTokenExpired, getRemainingTime } from '../utils/timeUtils';
+import { AuthError } from '../types/errors';
 
 export const signUp = async (req: Request, res: Response) => {
   const { email, password, name } = req.body;
@@ -14,9 +15,10 @@ export const signUp = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: ' Succesfully created',
     });
-  } catch (error: any) {
-    res.status(400).json({
-      message: error.message || 'Signup failed',
+  } catch (error: unknown) {
+    const authError = error as AuthError;
+    res.status(authError.statusCode || 400).json({
+      message: authError.message || 'Signup failed',
     });
   }
 };
@@ -34,9 +36,10 @@ export const verifyEmail = async (req: Request, res: Response) => {
     return res.status(200).json({
       message: 'Email verified successfully! You can now login.',
     });
-  } catch (error: any) {
-    res.status(400).json({
-      message: error.message || 'Verification failed',
+  } catch (error: unknown) {
+    const authError = error as AuthError;
+    res.status(authError.statusCode || 400).json({
+      message: authError.message || 'Email Verifcation failed',
     });
   }
 };
@@ -56,9 +59,10 @@ export const login = async (req: Request, res: Response) => {
       idToken: result.AuthenticationResult?.IdToken,
       refreshToken: result.AuthenticationResult?.RefreshToken,
     });
-  } catch (error: any) {
-    res.status(400).json({
-      message: error.message || 'Verification failed',
+  } catch (error: unknown) {
+    const authError = error as AuthError;
+    res.status(authError.statusCode || 400).json({
+      message: authError.message || 'Login failed',
     });
   }
 };
@@ -77,9 +81,10 @@ export const refreshToken = async (req: Request, res: Response) => {
       accessToken: result.AuthenticationResult?.AccessToken,
       idToken: result.AuthenticationResult?.IdToken,
     });
-  } catch (error: any) {
-    res.status(400).json({
-      message: error.message || 'Token refershed failed',
+  } catch (error: unknown) {
+    const authError = error as AuthError;
+    res.status(authError.statusCode || 400).json({
+      message: authError.message || 'Not able to  refresh the token',
     });
   }
 };
@@ -103,9 +108,10 @@ export const verifyToken = async (req: Request, res: Response) => {
       isExpired: isTokenExpired(result.exp),
       remainingSeconds: getRemainingTime(result.exp),
     });
-  } catch (error: any) {
-    res.status(401).json({
-      message: error.message || 'Token is not valid or expired',
+  } catch (error: unknown) {
+    const authError = error as AuthError;
+    res.status(authError.statusCode || 400).json({
+      message: authError.message || 'Verfication failed',
     });
   }
 };
