@@ -12,12 +12,6 @@ const cognitoClient = new CognitoIdentityProviderClient({
   region: config.cognito.region,
 });
 
-console.log('Cognito Config:', {
-  region: config.cognito.region,
-  userPoolId: config.cognito.userPoolId,
-  clientId: config.cognito.clientId,
-});
-
 export const jwtVerifier = CognitoJwtVerifier.create({
   userPoolId: config.cognito.userPoolId,
   tokenUse: 'access',
@@ -38,13 +32,17 @@ export const authService = {
 
     try {
       const response = await cognitoClient.send(command);
-      console.log('Signup successful:', response);
       return response;
-    } catch (error: any) {
-      console.error('Cognito signup error:', error.message);
-      throw error;
+    } catch (error: unknown) {
+      const err = error as any;
+      throw {
+        message: err.message || 'Signup failed',
+        statusCode: 400,
+        code: err.code,
+      };
     }
   },
+
   async verifyEmail(email: string, code: string) {
     const command = new ConfirmSignUpCommand({
       ClientId: config.cognito.clientId,
@@ -54,13 +52,17 @@ export const authService = {
 
     try {
       const response = await cognitoClient.send(command);
-      console.log('Verification successful:', response);
       return response;
-    } catch (error: any) {
-      console.error('Verification error:', error.message);
-      throw error;
+    } catch (error: unknown) {
+      const err = error as any;
+      throw {
+        message: err.message || 'Verification failed',
+        statusCode: 400,
+        code: err.code,
+      };
     }
   },
+
   async login(email: string, password: string) {
     const command = new InitiateAuthCommand({
       ClientId: config.cognito.clientId,
@@ -70,13 +72,53 @@ export const authService = {
         PASSWORD: password,
       },
     });
+
     try {
       const response = await cognitoClient.send(command);
-      console.log('Login successful:', response);
       return response;
-    } catch (error: any) {
-      console.error('Cognito login error:', error.message);
-      throw error;
+    } catch (error: unknown) {
+      const err = error as any;
+      throw {
+        message: err.message || 'Login failed',
+        statusCode: 401,
+        code: err.code,
+      };
+    }
+  },
+
+  async refreshToken(refreshToken: string) {
+    const command = new InitiateAuthCommand({
+      ClientId: config.cognito.clientId,
+      AuthFlow: AuthFlowType.REFRESH_TOKEN_AUTH,
+      AuthParameters: {
+        REFRESH_TOKEN: refreshToken,
+      },
+    });
+
+    try {
+      const response = await cognitoClient.send(command);
+      return response;
+    } catch (error: unknown) {
+      const err = error as any;
+      throw {
+        message: err.message || 'Token refresh failed',
+        statusCode: 401,
+        code: err.code,
+      };
+    }
+  },
+
+  async verifyAccessToken(token: string) {
+    try {
+      const payload = await jwtVerifier.verify(token);
+      return payload;
+    } catch (error: unknown) {
+      const err = error as any;
+      throw {
+        message: 'Invalid or expired token',
+        statusCode: 403,
+        code: err.code || 'TOKEN_INVALID',
+      };
     }
   },
 };
