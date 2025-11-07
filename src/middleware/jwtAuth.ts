@@ -19,6 +19,14 @@ export async function authenticateToken(
 
   const token = authHeader.split(' ')[1];
 
+  if (!token) {
+    res.status(401).json({
+      message: 'Invalid token format',
+      code: 'INVALID_TOKEN_FORMAT',
+    });
+    return;
+  }
+
   try {
     const payload = await jwtVerifier.verify(token);
     res.locals.user = payload;
@@ -29,5 +37,6 @@ export async function authenticateToken(
       message: authError.message || 'Invalid token',
       code: authError.code || 'INVALID_TOKEN',
     });
+    return;
   }
 }

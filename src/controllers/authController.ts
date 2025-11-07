@@ -39,7 +39,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
   } catch (error: unknown) {
     const authError = error as AuthError;
     res.status(authError.statusCode || 400).json({
-      message: authError.message || 'Email Verifcation failed',
+      message: authError.message || 'Email Verification failed',
     });
   }
 };
@@ -71,20 +71,20 @@ export const refreshToken = async (req: Request, res: Response) => {
   const { refreshToken } = req.body;
   if (!refreshToken) {
     return res.status(400).json({
-      message: 'Rfersh token required',
+      message: 'Refresh token required',
     });
   }
   try {
     const result = await authService.refreshToken(refreshToken);
     return res.status(200).json({
-      message: 'Token refreshed succesfully',
+      message: 'Token refreshed successfully',
       accessToken: result.AuthenticationResult?.AccessToken,
       idToken: result.AuthenticationResult?.IdToken,
     });
   } catch (error: unknown) {
     const authError = error as AuthError;
     res.status(authError.statusCode || 400).json({
-      message: authError.message || 'Not able to  refresh the token',
+      message: authError.message || 'Unable to refresh the token',
     });
   }
 };
@@ -111,7 +111,7 @@ export const verifyToken = async (req: Request, res: Response) => {
   } catch (error: unknown) {
     const authError = error as AuthError;
     res.status(authError.statusCode || 400).json({
-      message: authError.message || 'Verfication failed',
+      message: authError.message || 'Verification failed',
     });
   }
 };
