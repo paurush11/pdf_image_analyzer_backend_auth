@@ -79,4 +79,31 @@ export const authService = {
       throw error;
     }
   },
+  async refreshToken(refreshToken: string) {
+    const command = new InitiateAuthCommand({
+      ClientId: config.cognito.clientId,
+      AuthFlow: AuthFlowType.REFRESH_TOKEN_AUTH,
+      AuthParameters: {
+        REFRESH_TOKEN: refreshToken,
+      },
+    });
+    try {
+      const response = await cognitoClient.send(command);
+      console.log('Token refersh succesfully', response);
+      return response;
+    } catch (error: any) {
+      console.log('cognito refersh token error', error.message);
+      throw error;
+    }
+  },
+  async verifyAccessToken(token: string) {
+    try {
+      const payload = await jwtVerifier.verify(token);
+      console.log('Token verfied suceesfully', payload);
+      return payload;
+    } catch (error: any) {
+      console.log('Token does not verify succesfully', error.message);
+      throw error;
+    }
+  },
 };
