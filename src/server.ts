@@ -19,5 +19,3 @@ app.use('/api', routes);
 app.listen(config.port, () => {
   console.log(`server is running on ${config.nodeEnv} mode on port ${config.port}`);
 });
-
-app.use('/api', routes);
