@@ -11,4 +11,11 @@ export const config = {
     clientId: process.env.COGNITO_CLIENT_ID || '',
     region: process.env.COGNITO_REGION || 'us-east-2',
   },
+  oauth: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      redirectUri: process.env.GOOGLE_REDIRECT_URI || '',
+    },
+  },
 };

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config } from './config/environment';
 import routes from './routes';
+import { oauthService } from './services/oauthService';
 
 const app = express();
 
@@ -21,3 +22,5 @@ app.listen(config.port, () => {
 });
 
 app.use('/api', routes);
+
+console.log('Google Auth URL:', oauthService.getGoogleAuthUrl());
