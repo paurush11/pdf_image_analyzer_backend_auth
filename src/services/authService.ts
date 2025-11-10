@@ -4,13 +4,20 @@ import {
   SignUpCommand,
   ConfirmSignUpCommand,
   AuthFlowType,
+  AdminGetUserCommand,
+  AdminCreateUserCommand,
+  AdminSetUserPasswordCommand,
+  AdminInitiateAuthCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
+import crypto from 'crypto';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import { config } from '../config/environment';
 
-const cognitoClient = new CognitoIdentityProviderClient({
-  region: config.cognito.region,
-});
+// Debug: Check if credentials are loaded
+console.log('🔑 AWS Credentials Check:');
+console.log('Access Key ID:', process.env.AWS_ACCESS_KEY_ID ? '✅ Loaded' : '❌ Missing');
+console.log('Secret Key:', process.env.AWS_SECRET_ACCESS_KEY ? '✅ Loaded' : '❌ Missing');
+console.log('Region:', process.env.AWS_REGION || config.cognito.region);
 
 export const jwtVerifier = CognitoJwtVerifier.create({
   userPoolId: config.cognito.userPoolId,
