@@ -32,10 +32,13 @@ export const oauthService = {
       });
 
       if (!tokenResponse.ok) {
+        const errorData = await tokenResponse.json();
+        console.error('❌ Google token exchange failed:', errorData);
         throw {
-          message: 'Failed to exchange code for tokens',
+          message: `Failed to exchange code for tokens: ${errorData.error || 'Unknown error'}`,
           statusCode: 401,
           code: 'TOKEN_EXCHANGE_FAILED',
+          details: errorData,
         };
       }
       const tokenData = await tokenResponse.json();
