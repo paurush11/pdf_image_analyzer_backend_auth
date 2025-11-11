@@ -33,7 +33,6 @@ export const oauthService = {
 
       if (!tokenResponse.ok) {
         const errorData = await tokenResponse.json();
-        console.error('❌ Google token exchange failed:', errorData);
         throw {
           message: `Failed to exchange code for tokens: ${errorData.error || 'Unknown error'}`,
           statusCode: 401,
@@ -85,7 +84,6 @@ export const oauthService = {
     return url;
   },
   async exchangeGitHubCode(code: string) {
-    // Fix the typo too!
     try {
       const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
         method: 'POST',
@@ -139,8 +137,6 @@ export const oauthService = {
       }
 
       const emails = await emailResponse.json();
-
-      // Find the primary verified email
       const primaryEmail = emails.find((email: any) => email.primary && email.verified);
 
       return {

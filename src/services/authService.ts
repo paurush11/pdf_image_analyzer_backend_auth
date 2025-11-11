@@ -13,12 +13,6 @@ import crypto from 'crypto';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import { config } from '../config/environment';
 
-// Debug: Check if credentials are loaded
-console.log('🔑 AWS Credentials Check:');
-console.log('Access Key ID:', process.env.AWS_ACCESS_KEY_ID ? '✅ Loaded' : '❌ Missing');
-console.log('Secret Key:', process.env.AWS_SECRET_ACCESS_KEY ? '✅ Loaded' : '❌ Missing');
-console.log('Region:', process.env.AWS_REGION || config.cognito.region);
-
 function getRandomPassword(): string {
   const randomPort = crypto.randomBytes(32).toString('base64');
   const password = randomPort + 'A1';
@@ -183,7 +177,7 @@ export const authService = {
           });
           await cognitoClient.send(setPasswordCommand);
 
-          console.log('✅ User created successfully');
+          console.log('User created successfully');
         } else {
           throw error;
         }
