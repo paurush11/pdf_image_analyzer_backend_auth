@@ -3,12 +3,27 @@ import { authService } from '../services/authService';
 import { formatExpirationTime, isTokenExpired, getRemainingTime } from '../utils/timeUtils';
 import { AuthError } from '../types/errors';
 
-export const signUp = async (req: Request, res: Response) => {
-  const { email, password, name } = req.body;
-  if (!email || !password || !name) {
-    return res.status(400).json({
-      message: 'You missed some field',
-    });
+export class AuthController {
+  @Timing()
+  @RateLimit(5, 60000)
+  async signUp(req: Request, res: Response) {
+    const { email, password, name } = req.body;
+    if (!email || !password || !name) {
+      return res.status(400).json({
+        message: 'You missed some field',
+      });
+    }
+    try {
+      await authService.signUp(email, password, name);
+      return res.status(200).json({
+        message: 'Successfully created',
+      });
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      res.status(authError.statusCode || 400).json({
+        message: authError.message || 'Signup failed',
+      });
+    }
   }
   try {
     await authService.signUp(email, password, name);
@@ -25,10 +40,25 @@ export const signUp = async (req: Request, res: Response) => {
 export const verifyEmail = async (req: Request, res: Response) => {
   const { email, code } = req.body;
 
-  if (!email || !code) {
-    return res.status(400).json({
-      message: 'Email and verification code required',
-    });
+  @Timing()
+  async verifyEmail(req: Request, res: Response) {
+    const { email, code } = req.body;
+    if (!email || !code) {
+      return res.status(400).json({
+        message: 'Email and verification code required',
+      });
+    }
+    try {
+      await authService.verifyEmail(email, code);
+      return res.status(200).json({
+        message: 'Email verified successfully! You can now login.',
+      });
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      res.status(authError.statusCode || 400).json({
+        message: authError.message || 'Email Verification failed',
+      });
+    }
   }
 
   try {
@@ -42,14 +72,28 @@ export const verifyEmail = async (req: Request, res: Response) => {
       message: authError.message || 'Email Verification failed',
     });
   }
-};
 
-export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({
-      message: 'email or password maybe wrong !!',
-    });
+  @Timing()
+  async refreshToken(req: Request, res: Response) {
+    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({
+        message: 'Refresh token required',
+      });
+    }
+    try {
+      const result = await authService.refreshToken(refreshToken);
+      return res.status(200).json({
+        message: 'Token refreshed successfully',
+        accessToken: result.AuthenticationResult?.AccessToken,
+        idToken: result.AuthenticationResult?.IdToken,
+      });
+    } catch (error: unknown) {
+      const authError = error as AuthError;
+      res.status(authError.statusCode || 401).json({
+        message: authError.message || 'Unable to refresh the token',
+      });
+    }
   }
   try {
     const result = await authService.login(email, password);
@@ -114,4 +158,8 @@ export const verifyToken = async (req: Request, res: Response) => {
       message: authError.message || 'Verification failed',
     });
   }
-};
+}
+
+export const authController = new AuthController();
+
+export const { signUp, verifyEmail, login, refreshToken, verifyToken } = authController;

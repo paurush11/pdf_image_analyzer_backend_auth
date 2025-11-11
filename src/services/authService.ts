@@ -4,13 +4,20 @@ import {
   SignUpCommand,
   ConfirmSignUpCommand,
   AuthFlowType,
+  AdminGetUserCommand,
+  AdminCreateUserCommand,
+  AdminSetUserPasswordCommand,
+  AdminInitiateAuthCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
+import crypto from 'crypto';
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import { config } from '../config/environment';
 
-const cognitoClient = new CognitoIdentityProviderClient({
-  region: config.cognito.region,
-});
+function getRandomPassword(): string {
+  const randomPort = crypto.randomBytes(32).toString('base64');
+  const password = randomPort + 'A1';
+  return password;
+}
 
 export const jwtVerifier = CognitoJwtVerifier.create({
   userPoolId: config.cognito.userPoolId,

@@ -5,6 +5,8 @@
     
     // Module system (CommonJS for Node.js)
     "module": "commonjs",
+    "experimentalDecorators": true,    
+    "emitDecoratorMetadata": true, 
     
     // Where compiled JS goes
     "outDir": "./dist",
