@@ -9,6 +9,8 @@ export const config = {
   cognito: {
     userPoolId: process.env.COGNITO_USER_POOL_ID || '',
     clientId: process.env.COGNITO_CLIENT_ID || '',
-    region: process.env.COGNITO_REGION || 'us-east-2',
+    region: process.env.COGNITO_REGION || 'us-east-1',
+    clientSecret: process.env.COGNITO_CLIENT_SECRET || '',
+    identityPoolId: process.env.COGNITO_IDENTITY_POOL_ID || '',
   },
 };
