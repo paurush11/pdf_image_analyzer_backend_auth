@@ -9,24 +9,13 @@ import {
 import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import crypto from 'crypto';
 import { config } from '../config/environment';
-
-/**
- * Your pool is configured for: username + email alias
- * -> You must NOT use an email-looking Username at SignUp.
- * We derive a deterministic, safe username from the email.
- */
-function usernameFromEmail(email: string): string {
-  const slug = crypto
-    .createHash('sha256')
-    .update(email.trim().toLowerCase())
-    .digest('hex')
-    .slice(0, 24);
-  return `u_${slug}`; // not email-shaped
-}
-
+import { usernameFromEmail } from '../utils/usernameUtils';
 /** Compute SECRET_HASH for whatever Username/USERNAME you send in the request */
 function secretHash(usernameOrAlias: string): string {
-  const h = crypto.createHmac('sha256', config.cognito.clientSecret); // keep server-side only
+  if (!config.cognito.clientSecret) {
+    throw new Error('COGNITO_CLIENT_SECRET must be set to compute SECRET_HASH');
+  }
+  const h = crypto.createHmac('sha256', config.cognito.clientSecret);
   h.update(usernameOrAlias + config.cognito.clientId);
   return h.digest('base64');
 }
