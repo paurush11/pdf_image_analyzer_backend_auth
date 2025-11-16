@@ -2,6 +2,7 @@
 import { Request, Response } from 'express';
 import { authService } from '../services/authService';
 import { formatExpirationTime, isTokenExpired, getRemainingTime } from '../utils/timeUtils';
+import { config } from '../config/environment';
 
 type AuthErrorShape = { message?: string; statusCode?: number; code?: string };
 
@@ -25,6 +26,9 @@ export const signUp = async (req: Request, res: Response) => {
     phone?: string;
     name?: string;
   };
+
+  console.log(process.env.COGNITO_CLIENT_SECRET);
+  console.log(config.cognito);
 
   if (!email || !password || !givenName || !phone) {
     return res.status(400).json({
