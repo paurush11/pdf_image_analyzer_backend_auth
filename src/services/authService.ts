@@ -100,13 +100,14 @@ export const authService = {
   },
 
   async login(email: string, password: string): Promise<InitiateAuthCommandOutput> {
+    const username = usernameFromEmail(email);
     const cmd = new InitiateAuthCommand({
       ClientId: config.cognito.clientId,
       AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
       AuthParameters: {
-        USERNAME: email,
+        USERNAME: username,
         PASSWORD: password,
-        SECRET_HASH: secretHash(email),
+        SECRET_HASH: secretHash(username),
       },
     });
     try {
@@ -122,13 +123,14 @@ export const authService = {
   },
 
   async refreshToken(refreshToken: string, email: string): Promise<InitiateAuthCommandOutput> {
+    const username = usernameFromEmail(email);
     const cmd = new InitiateAuthCommand({
       ClientId: config.cognito.clientId,
       AuthFlow: AuthFlowType.REFRESH_TOKEN_AUTH,
       AuthParameters: {
         REFRESH_TOKEN: refreshToken,
-        USERNAME: email,
-        SECRET_HASH: secretHash(email),
+        USERNAME: username,
+        SECRET_HASH: secretHash(username),
       },
     });
     try {
