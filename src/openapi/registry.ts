@@ -22,7 +22,12 @@ export function generateOpenApiDocument({
   return doc;
 }
 
-// tiny helper to wrap zod schema as request content
 export const jsonBody = (schema: z.ZodTypeAny) => ({
-  content: { 'application/json': { schema } },
+  body: {
+    content: {
+      'application/json': {
+        schema,
+      },
+    },
+  },
 });
