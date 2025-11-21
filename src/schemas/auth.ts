@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const SignupRequest = z.object({
-  email: z.email(), // REQUIRED
-  username: z.string(), // REQUIRED
+  email: z.string().email(),
+  username: z.string(),
   password: z.string().min(6),
   givenName: z.string().min(1),
   phone: z.string().min(7),
@@ -18,28 +18,17 @@ export const ErrorResponse = z.object({
   code: z.string().optional(),
 });
 
-export const VerifyEmailRequest = z
-  .object({
-    email: z.string().email().optional(),
-    username: z.string().optional(),
-    code: z.string().min(1),
-  })
-  .refine(d => d.email || d.username, {
-    message: 'Email or username is required',
-    path: ['email'],
-  });
+export const VerifyEmailRequest = z.object({
+  email: z.string().email().optional(),
+  username: z.string().optional(),
+  code: z.string().min(1),
+});
 
-// EITHER username OR email + password
-export const LoginRequest = z
-  .object({
-    username: z.string().optional(),
-    email: z.email().optional(),
-    password: z.string().min(6),
-  })
-  .refine(data => data.username || data.email, {
-    message: 'Either username or email must be provided',
-    path: ['username'],
-  });
+export const LoginRequest = z.object({
+  username: z.string().optional(),
+  email: z.string().email().optional(),
+  password: z.string().min(6),
+});
 
 export const LoginResponse = z.object({
   message: z.string(),
@@ -52,7 +41,7 @@ export const LoginResponse = z.object({
 
 export const RefreshTokenRequest = z.object({
   refreshToken: z.string(),
-  email: z.email(), // canonical username
+  email: z.string().email(),
 });
 
 export const RefreshTokenResponse = z.object({
@@ -76,6 +65,25 @@ export const VerifyTokenResponse = z.object({
   expiresAtFormatted: z.string().optional(),
   isExpired: z.boolean().optional(),
   remainingSeconds: z.number().optional(),
+});
+
+export const OAuthTokenResponse = z.object({
+  message: z.string(),
+  accessToken: z.string(),
+  idToken: z.string(),
+  refreshToken: z.string(),
+  tokenType: z.string(),
+  expiresIn: z.number(),
+  user: z
+    .object({
+      sub: z.string(),
+      email: z.string().email(),
+      emailVerified: z.boolean(),
+      givenName: z.string().optional(),
+      name: z.string().optional(),
+      username: z.string().optional(),
+    })
+    .optional(),
 });
 
 export type TSignupRequest = z.infer<typeof SignupRequest>;
