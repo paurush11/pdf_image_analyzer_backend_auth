@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { authService } from '../services/authService';
 import { formatExpirationTime, isTokenExpired, getRemainingTime } from '../utils/timeUtils';
+import { config } from '../config/environment';
+import * as oauthService from '../services/oauthService';
 
 type AuthErrorShape = { message?: string; statusCode?: number; code?: string };
 
@@ -78,7 +80,7 @@ export const login = async (req: Request, res: Response) => {
     return res.status(400).json({ message: 'Password is required' });
   }
 
-  const identifier = username ?? email!; // safe because we checked above
+  const identifier = username ?? email!;
 
   try {
     const result = await authService.login(identifier, password);
