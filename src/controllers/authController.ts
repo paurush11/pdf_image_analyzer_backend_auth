@@ -2,7 +2,6 @@
 import { Request, Response } from 'express';
 import { authService } from '../services/authService';
 import { formatExpirationTime, isTokenExpired, getRemainingTime } from '../utils/timeUtils';
-import { config } from '../config/environment';
 
 type AuthErrorShape = { message?: string; statusCode?: number; code?: string };
 
@@ -18,26 +17,26 @@ const toHttpError = (e: unknown, fallbackMsg: string, fallbackCode = 400) => {
 };
 
 export const signUp = async (req: Request, res: Response) => {
-  // Required by your pool: email, password, givenName, phone (E.164)
-  const { email, password, givenName, phone, name } = req.body as {
+  const { email, password, givenName, phone, name, username } = req.body as {
     email?: string;
     password?: string;
     givenName?: string;
+    username?: string;
     phone?: string;
     name?: string;
   };
 
-  console.log(process.env.COGNITO_CLIENT_SECRET);
-  console.log(config.cognito);
-
-  if (!email || !password || !givenName || !phone) {
+  if (!email || !username) {
+    return res.status(400).json({ message: 'Email and username are required' });
+  }
+  if (!password || !givenName || !phone) {
     return res.status(400).json({
-      message: 'Missing required fields: email, password, givenName, phone',
+      message: 'Missing required fields: password, givenName, phone',
     });
   }
 
   try {
-    await authService.signUp({ email, password, givenName, phone, name });
+    await authService.signUp({ email, password, givenName, username, phone, name });
     return res.status(200).json({
       message: 'Successfully created. Please verify your email with the code sent.',
     });
@@ -49,12 +48,20 @@ export const signUp = async (req: Request, res: Response) => {
 };
 
 export const verifyEmail = async (req: Request, res: Response) => {
-  const { email, code } = req.body as { email?: string; code?: string };
-  if (!email || !code) {
-    return res.status(400).json({ message: 'Email and verification code are required' });
+  const { email, username, code } = req.body as {
+    email?: string;
+    username?: string;
+    code?: string;
+  };
+
+  if (!code || (!email && !username)) {
+    return res
+      .status(400)
+      .json({ message: 'Email or username and verification code are required' });
   }
+
   try {
-    await authService.verifyEmail(email, code);
+    await authService.verifyEmail({ email, username, code });
     return res.status(200).json({ message: 'Email verified successfully! You can now log in.' });
   } catch (e) {
     console.error(e);
@@ -64,12 +71,23 @@ export const verifyEmail = async (req: Request, res: Response) => {
 };
 
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body as { email?: string; password?: string };
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password are required' });
+  const { username, email, password } = req.body as {
+    username?: string;
+    email?: string;
+    password?: string;
+  };
+
+  if (!username && !email) {
+    return res.status(400).json({ message: 'Username or email are required' });
   }
+  if (!password) {
+    return res.status(400).json({ message: 'Password is required' });
+  }
+
+  const identifier = username ?? email!; // safe because we checked above
+
   try {
-    const result = await authService.login(email, password);
+    const result = await authService.login(identifier, password);
     return res.status(200).json({
       message: 'Login successful',
       accessToken: result.AuthenticationResult?.AccessToken,
