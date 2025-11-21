@@ -17,16 +17,25 @@ import { addRoute } from '../openapi/route';
 import { authenticateToken } from '../middleware/jwtAuth';
 
 type AuthedLocals = { user?: { sub: string; username: string; exp: number } };
+
 const router = Router();
 
-// Express: '/protected' | OpenAPI: '/auth/protected'
+/**
+ * Protected route example
+ * Express path:    /protected
+ * OpenAPI path:    /auth/protected
+ */
 addRoute(router, {
   method: 'get',
   path: '/protected',
   openapiPath: '/auth/protected',
   tags: ['Auth'],
   summary: 'Protected route (requires Bearer token)',
-  responses: { 200: MessageResponse, 403: ErrorResponse },
+  responses: {
+    200: MessageResponse,
+    401: ErrorResponse,
+    403: ErrorResponse,
+  },
   handler: [
     authenticateToken,
     (req: Request, res: Response<any, AuthedLocals>) => {
@@ -36,6 +45,10 @@ addRoute(router, {
   ],
 });
 
+/**
+ * Sign up
+ * Requires: email, username, password, givenName, phone
+ */
 addRoute(router, {
   method: 'post',
   path: '/signup',
@@ -43,43 +56,72 @@ addRoute(router, {
   tags: ['Auth'],
   summary: 'Register a new user',
   request: { body: SignupRequest },
-  responses: { 200: MessageResponse, 400: ErrorResponse, 409: ErrorResponse },
+  responses: {
+    200: MessageResponse,
+    400: ErrorResponse,
+    409: ErrorResponse,
+  },
   handler: ctrl.signUp,
 });
 
+/**
+ * Verify email with code
+ */
 addRoute(router, {
   method: 'post',
   path: '/verify',
   openapiPath: '/auth/verify',
   tags: ['Auth'],
-  summary: 'Confirm email with code',
+  summary: 'Confirm email with verification code',
   request: { body: VerifyEmailRequest },
-  responses: { 200: MessageResponse, 400: ErrorResponse },
+  responses: {
+    200: MessageResponse,
+    400: ErrorResponse,
+  },
   handler: ctrl.verifyEmail,
 });
 
+/**
+ * Login
+ * Accepts: either username OR email + password
+ */
 addRoute(router, {
   method: 'post',
   path: '/login',
   openapiPath: '/auth/login',
   tags: ['Auth'],
-  summary: 'Login with email & password',
+  summary: 'Login with username or email and password',
   request: { body: LoginRequest },
-  responses: { 200: LoginResponse, 401: ErrorResponse, 400: ErrorResponse },
+  responses: {
+    200: LoginResponse,
+    400: ErrorResponse,
+    401: ErrorResponse,
+  },
   handler: ctrl.login,
 });
 
+/**
+ * Refresh access token
+ * Requires: refreshToken + email (the Cognito username you used)
+ */
 addRoute(router, {
   method: 'post',
   path: '/refresh',
   openapiPath: '/auth/refresh',
   tags: ['Auth'],
-  summary: 'Refresh access token',
+  summary: 'Refresh access token using refresh token',
   request: { body: RefreshTokenRequest },
-  responses: { 200: RefreshTokenResponse, 401: ErrorResponse, 400: ErrorResponse },
+  responses: {
+    200: RefreshTokenResponse,
+    400: ErrorResponse,
+    401: ErrorResponse,
+  },
   handler: ctrl.refreshToken,
 });
 
+/**
+ * Verify an access token
+ */
 addRoute(router, {
   method: 'post',
   path: '/verify-token',
@@ -87,7 +129,11 @@ addRoute(router, {
   tags: ['Auth'],
   summary: 'Verify an access token',
   request: { body: VerifyTokenRequest },
-  responses: { 200: VerifyTokenResponse, 403: ErrorResponse, 400: ErrorResponse },
+  responses: {
+    200: VerifyTokenResponse,
+    400: ErrorResponse,
+    403: ErrorResponse,
+  },
   handler: ctrl.verifyToken,
 });
 

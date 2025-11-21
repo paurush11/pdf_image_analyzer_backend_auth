@@ -13,7 +13,6 @@ import { CognitoJwtVerifier } from 'aws-jwt-verify';
 import type { JwtPayload } from 'aws-jwt-verify/jwt-model';
 import crypto from 'crypto';
 import { config } from '../config/environment';
-import { usernameFromEmail } from '../utils/usernameUtils';
 
 type ServiceError = { message?: string; statusCode?: number; code?: string };
 
@@ -33,6 +32,9 @@ function toE164(raw: string): string {
   return s;
 }
 
+const isEmailLike = (value: string | undefined | null): boolean =>
+  !!value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
 const cognitoClient = new CognitoIdentityProviderClient({
   region: config.cognito.region,
 });
@@ -48,22 +50,43 @@ export const authService = {
     email: string;
     password: string;
     givenName: string;
+    username: string;
     phone: string;
     name?: string;
   }): Promise<SignUpCommandOutput> {
-    const { email, password, givenName, phone, name } = params;
+    const { email, password, givenName, username, phone, name } = params;
 
-    const username = usernameFromEmail(email);
+    // ✅ HARD VALIDATION: username must exist and must NOT look like an email
+    if (!username || !username.trim()) {
+      throw {
+        message: 'Username is required',
+        statusCode: 400,
+        code: 'USERNAME_REQUIRED',
+      };
+    }
+
+    if (isEmailLike(username)) {
+      throw {
+        message:
+          'Username cannot be of email format, since user pool is configured for email alias.',
+        statusCode: 400,
+        code: 'USERNAME_EMAIL_FORMAT_NOT_ALLOWED',
+      };
+    }
+
+    const cognitoUsername = username.trim(); // safe to use directly
+
     const cmd = new SignUpCommand({
       ClientId: config.cognito.clientId,
-      Username: username,
+      Username: cognitoUsername, // 👈 NEVER an email
       Password: password,
-      SecretHash: secretHash(username),
+      SecretHash: secretHash(cognitoUsername),
       UserAttributes: [
         { Name: 'email', Value: email },
         ...(name ? [{ Name: 'name', Value: name }] : []),
         { Name: 'given_name', Value: givenName },
         { Name: 'phone_number', Value: toE164(phone) },
+        { Name: 'preferred_username', Value: username }, // user’s handle (same as Username here)
       ],
     });
 
@@ -79,35 +102,14 @@ export const authService = {
     }
   },
 
-  async verifyEmail(email: string, code: string): Promise<ConfirmSignUpCommandOutput> {
-    const username = usernameFromEmail(email);
-    const cmd = new ConfirmSignUpCommand({
-      ClientId: config.cognito.clientId,
-      Username: username,
-      ConfirmationCode: code,
-      SecretHash: secretHash(username),
-    });
-    try {
-      return await cognitoClient.send(cmd);
-    } catch (e) {
-      const err = e as ServiceError;
-      throw {
-        message: err.message || 'Verification failed',
-        statusCode: 400,
-        code: err.code,
-      };
-    }
-  },
-
-  async login(email: string, password: string): Promise<InitiateAuthCommandOutput> {
-    const username = usernameFromEmail(email);
+  async login(identifier: string, password: string): Promise<InitiateAuthCommandOutput> {
     const cmd = new InitiateAuthCommand({
       ClientId: config.cognito.clientId,
       AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
       AuthParameters: {
-        USERNAME: username,
+        USERNAME: identifier, // username OR email (alias)
         PASSWORD: password,
-        SECRET_HASH: secretHash(username),
+        SECRET_HASH: secretHash(identifier),
       },
     });
     try {
@@ -123,7 +125,7 @@ export const authService = {
   },
 
   async refreshToken(refreshToken: string, email: string): Promise<InitiateAuthCommandOutput> {
-    const username = usernameFromEmail(email);
+    const username = email; // using email alias to refresh
     const cmd = new InitiateAuthCommand({
       ClientId: config.cognito.clientId,
       AuthFlow: AuthFlowType.REFRESH_TOKEN_AUTH,
@@ -158,13 +160,38 @@ export const authService = {
     }
   },
 
-  async confirmSignup(username: string, code: string): Promise<ConfirmSignUpCommandOutput> {
+  async verifyEmail(params: {
+    email?: string;
+    username?: string;
+    code: string;
+  }): Promise<ConfirmSignUpCommandOutput> {
+    const { email, username, code } = params;
+
+    const identifier = (username ?? email)?.trim();
+    if (!identifier) {
+      throw {
+        message: 'Email or username is required',
+        statusCode: 400,
+        code: 'MISSING_IDENTIFIER',
+      };
+    }
+
     const cmd = new ConfirmSignUpCommand({
       ClientId: config.cognito.clientId,
-      Username: username,
+      Username: identifier, // 👈 now matches what you used at signup
       ConfirmationCode: code,
-      SecretHash: secretHash(username),
+      SecretHash: secretHash(identifier),
     });
-    return cognitoClient.send(cmd);
+
+    try {
+      return await cognitoClient.send(cmd);
+    } catch (e) {
+      const err = e as ServiceError;
+      throw {
+        message: err.message || 'Verification failed',
+        statusCode: 400,
+        code: err.code,
+      };
+    }
   },
 };
