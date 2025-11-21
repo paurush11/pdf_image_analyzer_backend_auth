@@ -1,16 +1,13 @@
-// controllers/authController.ts
 import { Request, Response } from 'express';
 import { authService } from '../services/authService';
 import { formatExpirationTime, isTokenExpired, getRemainingTime } from '../utils/timeUtils';
 import { config } from '../config/environment';
+import * as oauthService from '../services/oauthService';
 
 type AuthErrorShape = { message?: string; statusCode?: number; code?: string };
 
 const toHttpError = (e: unknown, fallbackMsg: string, fallbackCode = 400) => {
   const err = e as AuthErrorShape;
-  console.error(err);
-  console.error(fallbackMsg);
-  console.error(fallbackCode);
   return {
     status: err?.statusCode ?? fallbackCode,
     message: err?.message ?? fallbackMsg,
@@ -18,7 +15,6 @@ const toHttpError = (e: unknown, fallbackMsg: string, fallbackCode = 400) => {
 };
 
 export const signUp = async (req: Request, res: Response) => {
-  // Required by your pool: email, password, givenName, phone (E.164)
   const { email, password, givenName, phone, name } = req.body as {
     email?: string;
     password?: string;
@@ -26,9 +22,6 @@ export const signUp = async (req: Request, res: Response) => {
     phone?: string;
     name?: string;
   };
-
-  console.log(process.env.COGNITO_CLIENT_SECRET);
-  console.log(config.cognito);
 
   if (!email || !password || !givenName || !phone) {
     return res.status(400).json({
@@ -43,7 +36,6 @@ export const signUp = async (req: Request, res: Response) => {
     });
   } catch (e) {
     const { status, message } = toHttpError(e, 'Signup failed');
-    console.error(e);
     return res.status(status).json({ message });
   }
 };
@@ -57,7 +49,6 @@ export const verifyEmail = async (req: Request, res: Response) => {
     await authService.verifyEmail(email, code);
     return res.status(200).json({ message: 'Email verified successfully! You can now log in.' });
   } catch (e) {
-    console.error(e);
     const { status, message } = toHttpError(e, 'Email verification failed');
     return res.status(status).json({ message });
   }
@@ -85,7 +76,6 @@ export const login = async (req: Request, res: Response) => {
 };
 
 export const refreshToken = async (req: Request, res: Response) => {
-  // With secret-hash clients, include the same USERNAME used at login (email)
   const { refreshToken, email } = req.body as { refreshToken?: string; email?: string };
   if (!refreshToken || !email) {
     return res.status(400).json({ message: 'Refresh token and email are required' });
@@ -125,5 +115,61 @@ export const verifyToken = async (req: Request, res: Response) => {
   } catch (e) {
     const { status, message } = toHttpError(e, 'Verification failed', 403);
     return res.status(status).json({ message, valid: false });
+  }
+};
+
+export const googleAuth = async (req: Request, res: Response) => {
+  try {
+    const authUrl = oauthService.buildGoogleAuthUrl();
+    return res.redirect(authUrl);
+  } catch (error) {
+    return res.status(500).json({ message: 'Failed to initiate Google authentication' });
+  }
+};
+
+export const googleCallback = async (req: Request, res: Response) => {
+  const { code, error, error_description } = req.query as {
+    code?: string;
+    error?: string;
+    error_description?: string;
+  };
+
+  if (error) {
+    return res.status(400).json({
+      message: 'OAuth authentication failed',
+      error,
+      error_description,
+    });
+  }
+
+  if (!code) {
+    return res.status(400).json({ message: 'Authorization code is required' });
+  }
+
+  try {
+    const tokenData = await oauthService.exchangeCodeForTokens(code, config.google.redirectUri);
+    const userInfo = await oauthService.getUserInfo(tokenData.access_token);
+
+    return res.status(200).json({
+      message: 'Google login successful',
+      accessToken: tokenData.access_token,
+      idToken: tokenData.id_token,
+      refreshToken: tokenData.refresh_token,
+      tokenType: tokenData.token_type,
+      expiresIn: tokenData.expires_in,
+      user: {
+        sub: userInfo.sub,
+        email: userInfo.email,
+        emailVerified: userInfo.email_verified,
+        givenName: userInfo.given_name,
+        name: userInfo.given_name || userInfo.preferred_username,
+        username: userInfo.username,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: 'Failed to complete Google authentication',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
   }
 };

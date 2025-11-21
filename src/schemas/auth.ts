@@ -64,6 +64,23 @@ export const VerifyTokenResponse = z.object({
   remainingSeconds: z.number().optional(),
 });
 
-// Inferred TS types if you need them
+export const OAuthTokenResponse = z.object({
+  message: z.string(),
+  accessToken: z.string(),
+  idToken: z.string(),
+  refreshToken: z.string(),
+  tokenType: z.string(),
+  expiresIn: z.number(),
+  user: z
+    .object({
+      sub: z.string(),
+      email: z.string().email(),
+      emailVerified: z.boolean(),
+      givenName: z.string().optional(),
+    })
+    .optional(),
+});
+
 export type TSignupRequest = z.infer<typeof SignupRequest>;
 export type TLoginRequest = z.infer<typeof LoginRequest>;
+export type TOAuthTokenResponse = z.infer<typeof OAuthTokenResponse>;
