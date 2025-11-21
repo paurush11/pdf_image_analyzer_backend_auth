@@ -1,4 +1,3 @@
-// src/routes/auth.routes.ts
 import { Router, Request, Response } from 'express';
 import * as ctrl from '../controllers/authController';
 import {
@@ -12,6 +11,7 @@ import {
   RefreshTokenResponse,
   VerifyTokenRequest,
   VerifyTokenResponse,
+  OAuthTokenResponse,
 } from '../schemas/auth';
 import { addRoute } from '../openapi/route';
 import { authenticateToken } from '../middleware/jwtAuth';
@@ -135,6 +135,26 @@ addRoute(router, {
     403: ErrorResponse,
   },
   handler: ctrl.verifyToken,
+});
+
+addRoute(router, {
+  method: 'get',
+  path: '/google',
+  openapiPath: '/auth/google',
+  tags: ['OAuth'],
+  summary: 'Initiate Google OAuth login',
+  responses: { 500: ErrorResponse },
+  handler: ctrl.googleAuth,
+});
+
+addRoute(router, {
+  method: 'get',
+  path: '/google/callback',
+  openapiPath: '/auth/google/callback',
+  tags: ['OAuth'],
+  summary: 'Google OAuth callback',
+  responses: { 200: OAuthTokenResponse, 400: ErrorResponse, 500: ErrorResponse },
+  handler: ctrl.googleCallback,
 });
 
 export default router;

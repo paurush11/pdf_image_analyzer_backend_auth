@@ -12,5 +12,11 @@ export const config = {
     region: process.env.COGNITO_REGION || 'us-east-1',
     clientSecret: process.env.COGNITO_CLIENT_SECRET || '',
     identityPoolId: process.env.COGNITO_IDENTITY_POOL_ID || '',
+    domain: process.env.COGNITO_DOMAIN || '',
+  },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    redirectUri: process.env.GOOGLE_REDIRECT_URI || '',
   },
 };

@@ -1,4 +1,3 @@
-// services/authService.ts
 import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
